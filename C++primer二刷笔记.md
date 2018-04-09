@@ -18,6 +18,30 @@
 14. 我们平时经常使用的#include， #define这些其实都有一个共同的名字：预处理器代码
 
 **三、字符串、向量和数组**
-1. 头文件中一般不使用using声明
+1. 头文件（.h文件）中一般不使用using声明
+2. 拷贝初始化和直接初始化： string s5 = "hiya"//拷贝初始化, string s6("hiyta")//直接初始化
+3. 在执行读取操作时，string对象会忽略开头的空格，例如输入“   hello world”则第一个输入为hello
+4. getline是一直读取直到出现换行符（换行符也读进来了）。
+5. string.size()返回的是无符号整数
+6. string 相加的时候必须保证+号两边至少有一个是string ，如 string s7 = "hello" + "," + s2;是不对的
+7. vector初始化的几种方式： vector<string> a = {"1", "2", "3"}; vector<int> ivec(10, -1); vector<string> svec(10) //10个空的 vector<string> vec1(vec2); vector vec1 = vec2;
+8. 但凡是使用了迭代器的循环体，都不要向迭代器所属的容器中添加元素（之前踩过这个坑）
+9. char数组一定要考虑给空字符的位置，例如const char a4[6] = "daniel"; 是错误的，因为没有空间可以存放空字符
+10. int * ptrs[10] //10个指针  int (*Parray)[10] = &arr ;// 一个指针，指向一个数组     int (&arrRef)[10] = arr; // 一个引用，引用一个数组   int *(&arry)[10] = ptrs; //arry是一个数组的引用，数组包含10个指针
+11. int ia[] = {0,1,2,3,4}; auto ia2(ia); // 事实上是 auto ia2(&ia[0])所以ia2是一个整形指针
+12. 数组不常用的begin和end   → → int *beg = begin(ia) //指向ia首元素的指针
+13. 使用数组初始化vector ： vector<int> ivec(begin(int_arr), end(int_arr));
 
+**四、表达式**
+1. 位运算符号使用的时候经常会出现正负号符号的问题，且如何处理正负号由编译器决定，所以一般来说仅使用于无符号整型变量
+2. 不同数据类型的转换：尽可能避免损失精度，例如int+double 会得到double， long+long long 会得到long long。另外，在if中，非bool转换成bool类型，在赋值中，右边值的类型转换成左边值的类型
+3. 强制类型转换（尽量不要用)
+static_cast : 可以进行任何具有明确定义的类型转换（除了const） 当需要把一个较大的算数类型赋值给较小的算数类型时很有用，此时会损失精度且不会有警告，也可以转换指针，例如 void *p = &d; double *dp = static_cast<double*>(p);
+dynamic_cast  :运行时类型识别
+const_cast ：只能改变运算对象的底层const    const char *pc; char *p = const_cast<char*>(pc);常常用于函数重载
+reinterpret_cast（能不用就不用，太危险了。。。） ：通常为运算对象的位模式提供较低层次上的重新解释，例如 int *ip; char *pc = reinterpret_cast<char*>(ip);此时程序员必须牢记pc真实值是一个int而不是char，如果把pc当成char用会报错，例如string str(pc)会报错
 
+**五、语句**
+1. 使用空语句 例如 while(cin >> s && s!='a');最好写上注释注明这里是有意省略
+2. 一般不要省略case后面的break，如果没有写break也最好加上注释说明程序的逻辑，同样最后一个标签的break虽然可以省略，但是还是建议不要省略，起码如果还要新增一个case 的话，就不用额外写break了。
+3. 最好不要省略switch中的default，这样是为了告诉阅读代码的人，已经考虑到了default的情况。
