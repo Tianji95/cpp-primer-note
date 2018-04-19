@@ -45,3 +45,87 @@ reinterpret_cast（能不用就不用，太危险了。。。） ：通常为运
 1. 使用空语句 例如 while(cin >> s && s!='a');最好写上注释注明这里是有意省略
 2. 一般不要省略case后面的break，如果没有写break也最好加上注释说明程序的逻辑，同样最后一个标签的break虽然可以省略，但是还是建议不要省略，起码如果还要新增一个case 的话，就不用额外写break了。
 3. 最好不要省略switch中的default，这样是为了告诉阅读代码的人，已经考虑到了default的情况。
+4. switch 比较有意思的例子：
+
+    case true:
+        string file_name;
+        int i = 0;
+        int j;
+        break;
+    case false:
+        j = next_num();
+        if(file_name.empty())....
+这个时候如果直接跳到false分支，则file_name会因为没有初始化出错，而file _name也在作用域内部.所以最好的方法还是自己用{}定义一个块
+5. do while 语句可以先执行循环体，在有些情况可能会比较好用（这个平时用的有点少。。）
+6. 异常处理代码：
+    try{
+        if(a == b){
+            throw runtime_error("is not same");
+        }
+    }catch(runtime_error err){
+        cout<<err.what();
+    }
+如果throw 出了一个异常，那么catch会按照函数调用关系依次向上寻找catch，如果最终没有找到catch，则会转到terminate的标准库函数中，程序非正常终止。<stdexcept>定义了出了runtime_error以外其他的几个异常类型，包括逻辑程序错误（logic _error），计算上溢（overflow _error）等
+
+
+**六、函数**
+1. static变量虽然也保存在程序的全局存储区当中，但是static只有其作用于可见，如果文件中的函数前添加static，则这个函数只有该文件可见。所以可以用于多文件多函数的定义
+2. 函数用到引用的时候，如果不会改变其原来值的话，尽量使用常量引用，一方面可以告诉阅读者这个值不会改变，另一方面可以避免一些不必要的麻烦。例如下面将会报错：
+    int find_char(string &s, char c);//错误定义
+    int find_char(const string &s, char c);//正确定义
+    find_char("hello world", "o");//调用
+3. 函数中数组传递的三种方式
+    void myfunc(const int*);
+    void myfunc(const int[]);
+    void myfunc(const int[10]);
+    int i = 0; j[2] = {0, 1};
+    myfunc(&i);
+    myfunc(j);
+4. func(int (&arr)[10])//arr是具有十个整数的整形数组的引用
+   func(int &arr[10])//arr是引用的数组
+5. main里面的(int argc, char *argv[])，程序本身的名字是argv[0],最后一个参数一定是argv[argc] = 0;
+6. 可变参数的函数：所有实参类型相同：传递initializer_list这样一个标准库
+                  void error_msg(initializer_list<string> msg);
+                  error_msg({"123", str1, str2})//花括号不能去掉
+                  所有实参类型不同：可变参数模板
+                  省略符：void foo(int, ...),可以使用va_list， va_start va_end来取得参数的值
+7. 函数可以返回左值，只不过比较奇怪，例如:
+    char &get_val(){
+        return str[idx]
+    }
+    get_val = 'A';
+8. 函数也可以返回大括号包围值的列表，例如 vector<string> process(){return {"123", "4565"}}
+9. 返回数组指针：C++无法直接返回数组指针，但是可以通过：
+    typedef int arrT[10] 或者 using arrT = int[10]  →   arrT* func(int i);来实现
+10. 函数的尾置返回类型->符号例如函数int (*func(int i))[10] 表示返回一个指针，该指针指向含有十个整数的数组，可以写成auto func(int i)->int(*)[10]    
+11. C++中，名字查找发生在类型检查以前，所以在下面情况下，print("123")是无法找到print(string s)的，因为只能找到print(int i);
+
+void print(string s);
+void func(){
+    void print(int i);
+    print("123");
+}
+
+12. 一般inline函数用在较小的函数体上面，因为这些较小的函数体写出来的时候比等价的表达式可读性更高（有些操作写成函数的好处）
+13. 常量表达式constexpr关键字：编译的时候将直接把函数转换成关键值，constexpr int new_sz(){return 42}   constexpr int foo = new_sz();constexpr函数内的语句在运行的时候不能执行操作。
+14. 在编写自己的asset文件的时候，可以使用预处理器定义的宏，输出异常出现的文件行号等，例如下面如果在test.cpp调用myasset并且出现异常，就会输出test.cpp
+"asset.h"
+void myasset(){
+    cout<< __FILE__<<endl;
+} 
+"test.cpp"
+myasset();
+15. 多个重载函数的实参类型转换顺序：1.实参形参类型相同、数组类型和指针类型之间的转换、添加或者删除顶层const。2.const转换实现的匹配。3.通过类型提升实现的匹配。4.算数类型转换或者指针转换实现的匹配。5.类类型转换实现的匹配
+16. 函数指针：bool (*pf)(const string &, const string &); 含义：pf前面有一个*，所以pf是指针，右侧是形参列表，说明pf指向的是函数，函数返回是bool，说明pf指向一个返回值是bool的函数指针。
+如果去掉括号，则bool *pf(const string &, const string &);是一个名为pf的函数，返回bool
+17. 重载函数的指针：void ff(int *); void ff(unsigned int); 
+                void (*pf1)(unsigned int) = ff;//正确
+                void (*pf2)(int) = ff;//错误，形参不匹配
+                double (*pf3)(int*) = ff//错误，返回值不匹配
+
+18. 以及尾置返回类型的函数：auto f1(int) -> int (*)(int *, int);
+
+
+**七、抽象数据类型（类）**
+1. string isbn() const{return this->bookNo}这里的const表示this是常量指针，不能改变返回值
+
