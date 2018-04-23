@@ -106,7 +106,7 @@ void func(){
     print("123");
 }
 
-12. 一般inline函数用在较小的函数体上面，因为这些较小的函数体写出来的时候比等价的表达式可读性更高（有些操作写成函数的好处）
+12. 一般inline函数用在较小的函数体上面，因为这些较小的函数体写出来的时候比等价的表达式可读性更高（有些操作写成函数的好处），或者想要在这些函数中加入一些debug信息，或者预期这个函数将来会变得很庞大。这些都是将这些操作写成内联小函数的好处
 13. 常量表达式constexpr关键字：编译的时候将直接把函数转换成关键值，constexpr int new_sz(){return 42}   constexpr int foo = new_sz();constexpr函数内的语句在运行的时候不能执行操作。
 14. 在编写自己的asset文件的时候，可以使用预处理器定义的宏，输出异常出现的文件行号等，例如下面如果在test.cpp调用myasset并且出现异常，就会输出test.cpp
 "asset.h"
@@ -127,5 +127,47 @@ myasset();
 
 
 **七、抽象数据类型（类）**
-1. string isbn() const{return this->bookNo}这里的const表示this是常量指针，不能改变返回值
+1. string isbn() const{return this->bookNo}这里的const表示this是常量指针，不能改变返回值，也不能改变this里面的值
+2. friend 友元关键字，最好放在类的头部集中声明，便于阅读，加上friend关键字以后被加上friend的类或者函数便可以访问声明类的私有成员了
+3. mutable 关键字：可变数据成员，在类成员前面加上以后，即使类本身是const，那这个成员也可以被修改
+4. 前向声明：只声明，不定义，声明的时候只知道有这个类，但是不清楚类里面有哪些成员，通常用于较大工程中文件之间的声明
+5. 函数在查找参数的时候，先查找函数作用域的参数，再查找类成员的参数，例如
+    int height;
+    void Screen::dummy_func(pos ht){
+        cursor = width * height;
+    }
+此时会先找到函数外面的height，而不会先找Screen::height，如果要使用的话，应该：
+    void Screen::dummy_func(pos ht){
+        cursor = width * this->height;或者 cursor = width * Screen::height;
+    }
+6. 类的委托构造函数：一个构造函数委托给另一个构造函数：
+    class Sales_data{
+        public:
+            Sales_data(int a, string b):bookNo(a), describe(b){}
+            //委托给上面那个构造函数
+            Sales_data():Sales_data(1, "123"){}
+    }
+7. explicit 关键字：用于禁止进行隐式转换，例如在构造函数前面写上以后，函数里面的实参就不允许进行隐式转换了。只对具有一个实参的构造函数有效，不过加了explicit虽然不能进行隐式转换，但是可以进行显示转换，例如使用static_cast
+8. 字面值常量类：顾名思义，类里面所有成员都是常量，类必须有一个constexpr的构造函数
 
+
+**八、IO**
+1. unitbuf 操作符：可以在每次输出操作后立即刷新缓冲区,将缓冲区的数据输出出来，例如 cout << unitbuf
+2. tie方法：将一个ios对象和另一个绑定起来，例如 cin.tie(&ofs)，就可以每在命令行中输入一个字符，就打印/写入到文件里面。
+3. 默认情况下，打开一个ofstream的时候，会把里面原来的文件内容全部丢弃掉，贼坑！！！！解决方法是加一个app模式，例如ofstream app("filename", ofstream::app)//隐含为输出模式 或者ofstream app("filename", ofstream::app|ofstream::out) 这里的app指的是append
+4. stringstream对象，其实就相当于一个string的缓冲区。用法：
+    ostringstream badNums;
+    if(!valid(nums)){
+        badNums << nums;
+    }
+    cerr << badNums.str() << endl;
+
+**九、顺序容器**
+1. 因为std标准库里面的容器效率比较低，所以在有替代品的时候，不推荐使用任何一种容器。
+2. forward_list 单向链表                只能单向访问，任何位置插入都很快
+   vector       可变大小数组            随机访问快，尾部插入元素快，中间插入删除元素慢
+   deque        双端队列                随机访问快，头尾插入删除快，中间（可能）慢
+   list         双向链表                只能双向顺序访问，任何位置插入都很快
+   array        固定大小数组            都很快，但是不能添加删除元素
+   string       与vector类似           
+3. 迭代器除了.begin() .end()以外还有.cbegin(), .rbegin(), .crbegin(),C指的是const，r指的是反向迭代器
