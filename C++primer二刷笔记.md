@@ -171,3 +171,31 @@ myasset();
    array        固定大小数组            都很快，但是不能添加删除元素
    string       与vector类似           
 3. 迭代器除了.begin() .end()以外还有.cbegin(), .rbegin(), .crbegin(),C指的是const，r指的是反向迭代器
+4. array数组类型与普通数组不同的地方在于，array数组类型允许类型赋值
+例如：c = {a, b, c}; c2 = c;
+5. 顺序容器的assign成员方法：实现顺序容器的拷贝（array除外）：
+    list<string> names;
+    vector<const char*> oldstyle
+    names = oldstyle // 错误，因为类型不同
+    names.assign(oldstyle.begin(), oldstyle.end());//正确
+    names.assign(10, "Hiya");//替换成10个"Hiya"
+6. swap交换的是内部地址，所以假定之前一个指向svec1[3]的迭代器，交换以后将会指向svec2[3]。这种做法会让swap很快，但是array和其他顺序容器不一样，array是真的交换数值的。所以array的swap效率和array里面的元素个数有关。
+7. 范围insert：vector<string> v = {"quasi", "simba", "frollo", "scar"}
+slist.insert(slist.begin(), v.end() - 2, v.end());//将v的最后两个元素添加到slist的开始位置
+svec.insert(svec.end(), 10, "Anna");
+slist.insert(slist.end(),{"these", "words"});
+8. vector数组在申请内存的时候，会提前申请大于所需的空间，作为备用。因为如果每insert一次就申请内存的话，将会使效率非常低。
+9. capacity和size的区别：capacity指的是在不分配新的内存空间时最多可以保存多少元素
+10. 容器的适配器（stack，quene 和 priority_quene）
+deque<int> deq
+stack<int> stk(deq);
+stack<string, vector<string>> str_stk(svec);
+使用：
+    while(!skt.empty()){
+        int value = stk.top();
+        stk.pop();//还有push以及emplace操作
+    }
+    quene也是类似的操作。
+
+**十、泛型算法**
+1. 
