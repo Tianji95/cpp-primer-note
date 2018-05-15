@@ -18,6 +18,8 @@
 14. 我们平时经常使用的#include， #define这些其实都有一个共同的名字：预处理器代码
 
 **三、字符串、向量和数组**
+
+
 1. 头文件（.h文件）中一般不使用using声明
 2. 拷贝初始化和直接初始化： string s5 = "hiya"//拷贝初始化, string s6("hiyta")//直接初始化
 3. 在执行读取操作时，string对象会忽略开头的空格，例如输入“   hello world”则第一个输入为hello
@@ -33,6 +35,8 @@
 13. 使用数组初始化vector ： vector<int> ivec(begin(int_arr), end(int_arr));
 
 **四、表达式**
+
+
 1. 位运算符号使用的时候经常会出现正负号符号的问题，且如何处理正负号由编译器决定，所以一般来说仅使用于无符号整型变量
 2. 不同数据类型的转换：尽可能避免损失精度，例如int+double 会得到double， long+long long 会得到long long。另外，在if中，非bool转换成bool类型，在赋值中，右边值的类型转换成左边值的类型
 3. 强制类型转换（尽量不要用)
@@ -42,6 +46,8 @@ const_cast ：只能改变运算对象的底层const    const char *pc; char *p 
 reinterpret_cast（能不用就不用，太危险了。。。） ：通常为运算对象的位模式提供较低层次上的重新解释，例如 int *ip; char *pc = reinterpret_cast<char*>(ip);此时程序员必须牢记pc真实值是一个int而不是char，如果把pc当成char用会报错，例如string str(pc)会报错
 
 **五、语句**
+
+
 1. 使用空语句 例如 while(cin >> s && s!='a');最好写上注释注明这里是有意省略
 2. 一般不要省略case后面的break，如果没有写break也最好加上注释说明程序的逻辑，同样最后一个标签的break虽然可以省略，但是还是建议不要省略，起码如果还要新增一个case 的话，就不用额外写break了。
 3. 最好不要省略switch中的default，这样是为了告诉阅读代码的人，已经考虑到了default的情况。
@@ -69,6 +75,8 @@ reinterpret_cast（能不用就不用，太危险了。。。） ：通常为运
 
 
 **六、函数**
+
+
 1. static变量虽然也保存在程序的全局存储区当中，但是static只有其作用于可见，如果文件中的函数前添加static，则这个函数只有该文件可见。所以可以用于多文件多函数的定义
 2. 函数用到引用的时候，如果不会改变其原来值的话，尽量使用常量引用，一方面可以告诉阅读者这个值不会改变，另一方面可以避免一些不必要的麻烦。例如下面将会报错：
     int find_char(string &s, char c);//错误定义
@@ -127,6 +135,8 @@ myasset();
 
 
 **七、抽象数据类型（类）**
+
+
 1. string isbn() const{return this->bookNo}这里的const表示this是常量指针，不能改变返回值，也不能改变this里面的值
 2. friend 友元关键字，最好放在类的头部集中声明，便于阅读，加上friend关键字以后被加上friend的类或者函数便可以访问声明类的私有成员了
 3. mutable 关键字：可变数据成员，在类成员前面加上以后，即使类本身是const，那这个成员也可以被修改
@@ -152,6 +162,8 @@ myasset();
 
 
 **八、IO**
+
+
 1. unitbuf 操作符：可以在每次输出操作后立即刷新缓冲区,将缓冲区的数据输出出来，例如 cout << unitbuf
 2. tie方法：将一个ios对象和另一个绑定起来，例如 cin.tie(&ofs)，就可以每在命令行中输入一个字符，就打印/写入到文件里面。
 3. 默认情况下，打开一个ofstream的时候，会把里面原来的文件内容全部丢弃掉，贼坑！！！！解决方法是加一个app模式，例如ofstream app("filename", ofstream::app)//隐含为输出模式 或者ofstream app("filename", ofstream::app|ofstream::out) 这里的app指的是append
@@ -163,6 +175,8 @@ myasset();
     cerr << badNums.str() << endl;
 
 **九、顺序容器**
+
+
 1. 因为std标准库里面的容器效率比较低，所以在有替代品的时候，不推荐使用任何一种容器。
 2. forward_list 单向链表                只能单向访问，任何位置插入都很快
    vector       可变大小数组            随机访问快，尾部插入元素快，中间插入删除元素慢
@@ -197,5 +211,46 @@ stack<string, vector<string>> str_stk(svec);
     }
     quene也是类似的操作。
 
+
 **十、泛型算法**
-1. 
+
+
+1. 泛型算法其实只是我们平时使用容器的类似于find/equal等方法的泛称，由标准库提供
+2. 如果不准备改变迭代器的值时，推荐采用cbegin和cend而不是begin和end
+3. accumulate的第三个元素决定了使用哪个+运算符，所以accumulate(v.cbegin(), v.cend(), "")是不对的，因为""是const string， 没有重载+号运算符。
+4. 一些写入的泛型算法只负责把容器内的值改变，而不申请新的空间，所以经常会出现的错误是：
+    vector<int> vec;
+    fill(vec.begin(), 10, 0);其中vec实际是空的，这时候fill就会报错
+5. back_inserter插入迭代器，可以通过向此迭代器赋值来向容器插入元素
+    vector<int> vec;
+    auto it = back_inserter(vec);
+    *it = 43;//此时就向vec中插入一个元素，vec的大小为1
+    或者
+    fill_n(back_inserter(vec), 10, 0);//就可以向vec中添加10个元素
+6. 自定义排序：谓词
+    sort(words.begin(), words.end(), isShorter); 
+    bool isShorter(const string &s1, const string &s2){return s1.size() < s2.size()}
+7. lambda 表达式：可以理解为未命名的内联函数。
+    auto f = []{return 43;};
+    f();
+    stable_sort(words.begin(), words.end(), [](const string &a, const string &b){return a.size() < b.size()});
+    其中捕获列表[]指的是那些明确使用的局部变量，例如
+    int sz;
+    f = [sz](const string &a){return sz > a.size()};
+    其中这个捕获的值是在创建的时候捕获，而不是调用的时候捕获，所以应该尽量减少捕获的值，防止在创建到调用这段时间内变量发生变化。
+8. 隐式捕获：f = [=, &os](){}//os是引用捕获方式，其他为值捕获方式
+9. lambda表达式的返回类型，需要尾置：
+    []() -> int {}
+10. lambda的好处在于他本身是可调用对象，可以作为参数存在，如果想要让函数也有这样的功能，可以使用bind方法：
+    bool check_size(const int, const string );
+    bind(check_size, 1, "str");
+    此时就可以作为参数调用了，例如 find_if(word.begin(), words,end(), bind(check_size, 1, "str"))
+11. placeholders 关键字和ref关键字，前者用于占位，后者用于生成一个可以拷贝的引用对象。
+12. 使用流迭代器istream_iterator<Sales_item> item_iter(cin)可以处理类的输入输出
+13. 所有泛型算法的_if版本都是可以接受一个谓词作为判断条件的。
+
+
+**十一、关联容器（主要是map，set）**
+
+1. map.upper_bound(k)返回一个迭代器，指向第一个关键字大于k的元素，count(t)返回关键字等于k的元素的数量
+2. equal_range函数：
