@@ -242,7 +242,7 @@ stack<string, vector<string>> str_stk(svec);
 9. lambda表达式的返回类型，需要尾置：
     []() -> int {}
 10. lambda的好处在于他本身是可调用对象，可以作为参数存在，如果想要让函数也有这样的功能，可以使用bind方法：
-    bool check_size(const int, const string );
+    bool check_size(const int, const string);
     bind(check_size, 1, "str");
     此时就可以作为参数调用了，例如 find_if(word.begin(), words,end(), bind(check_size, 1, "str"))
 11. placeholders 关键字和ref关键字，前者用于占位，后者用于生成一个可以拷贝的引用对象。
@@ -253,4 +253,24 @@ stack<string, vector<string>> str_stk(svec);
 **十一、关联容器（主要是map，set）**
 
 1. map.upper_bound(k)返回一个迭代器，指向第一个关键字大于k的元素，count(t)返回关键字等于k的元素的数量
-2. equal_range函数：
+2. 因为map、multimap等实际上都是有序的，所以在查找某一个元素的时候，可以使用lower_bound和upper_bound来对某一个关键字进行搜索。例如
+    for(auto beg = authors.lower_bound(searchItem), end = authors.upper_bound(searchItem);beg!=end; beg++)
+3. equal_range函数：一个第二种迭代方式的封装方法：
+    for(auto pos = authors.equal_range(searchItem);pos.first!=pos.second; pos.first++)
+4. 无序关联容器的本质是使用哈希函数和关键字来进行。存储组织上实际是一组桶，每个桶保存0个或者多个元素。无序容器使用一个哈希函数将元素映射到桶。无序关联容器还有一些管理桶的方法：bucket_count()正在使用桶的个数等。如果想要使用无序关联容器使用自定义类类型作为关键字的话，需要自己使用hash重载关键字，例如：
+    size_t hasher(const Sales_data &sd){ return hash<string>()(sd.isbn());}
+    bool eqOp(const Sales_data &lhs, const Sales_data &rhs){ return lhs.isbn()==rhs.isbn();}
+
+**十二、动态内存、智能指针**
+
+1. 静态内存：保存局部static变量、类static数据成员、定义在任何函数之外的变量，编译器自动创建和销毁，在使用之前分配，在程序结束后销毁。
+   栈内存：保存函数内的非static变量，编译器自动创建和销毁，仅在其定义的程序块运行的时候才存在
+   堆内存：又称自由空间，可以用来动态分配内存
+2. shared_ptr类：允许多个指针指向同一个对象
+除了初始化以外，使用方法和普通指针一样：shared_ptr<string> p1; *p1 = "hi"; swap(p ,q)//交换pq的指针。推荐使用make_shared来进行shared_ptr的创建，相对比较安全：
+    shared_ptr<int> p3 = make_shared<int>(42);
+3. shared_ptr 有一个问题，就是在最后一个对象销毁前都不会释放内存，所以如果把shared_ptr放在容器中重拍后不需要全部元素的时候，要记得erase那些不需要的元素。
+
+
+
+
