@@ -132,7 +132,7 @@ myasset();
                 double (*pf3)(int*) = ff//错误，返回值不匹配
 
 18. 以及尾置返回类型的函数：auto f1(int) -> int (*)(int *, int);
-
+19. 函数后面添加const关键字，表示该成员函数不会改变成员中的变量，见下面第一条
 
 **七、抽象数据类型（类）**
 
@@ -267,10 +267,61 @@ stack<string, vector<string>> str_stk(svec);
    栈内存：保存函数内的非static变量，编译器自动创建和销毁，仅在其定义的程序块运行的时候才存在
    堆内存：又称自由空间，可以用来动态分配内存
 2. shared_ptr类：允许多个指针指向同一个对象
-除了初始化以外，使用方法和普通指针一样：shared_ptr<string> p1; *p1 = "hi"; swap(p ,q)//交换pq的指针。推荐使用make_shared来进行shared_ptr的创建，相对比较安全：
+除了初始化以外，使用方法和普通指针一样：shared_ptr<string> p1; *p1 = "hi"; swap(p ,q)//交换pq的指针。推荐使用make_shared来进行shared_ptr的创建，相对比较安全（能够防止例如将同一块内存绑定到多个shared_ptr上面：
     shared_ptr<int> p3 = make_shared<int>(42);
 3. shared_ptr 有一个问题，就是在最后一个对象销毁前都不会释放内存，所以如果把shared_ptr放在容器中重拍后不需要全部元素的时候，要记得erase那些不需要的元素。
+4. 使用auto进行变量的初始化（不建议使用）：auto p1 = new auto(obj)//这简直太秀了。。。不管不顾的。。
+另外auto p2 = new auto{a, b, c}//错误的，因为auto内只能有单个初始化器。这种做法得到的会是一个指针，例如如果obj是一个int，那么p1就是一个int*
+5. 定位new(placemant new) int *p2 = new(nothrow) int//给new传递一个参数，如果内存耗尽，则不抛出异常，返回一个空指针
+6. 关于该不该使用智能指针的问题：C++primer中提到：“坚持只使用智能指针，就可以避免所有的内存泄漏问题，所以应该提倡使用智能指针”，但是在网易的分享/培训当中却说道：不要使用共享指针。其主要原因是：共享指针的乱用导致：被shared_ptr的资源实际上并没有共享，这样就会使代码出现资源泄漏和一些bug，而且因为有可能会出现其他程序员通过赋值给另一个共享指针而修改了这一段资源，这样的bug就会很难查出来。另一个原因时shared_ptr并不一定是线程安全的，所以要小心。同时有时候会忘记使用make_share来创建shared_ptr，会导致性能下降以及安全问题。同时经常会出现使用delete把智能指针删除的情况。
+另外对于游戏来说不用智能指针更好，因为引用计数本身会带来额外的开销，而且内存分配东一块西一块很不好管理，cache也不友好，最好是对象都放到列表里面，都用数组下标访问，这种方式既容易管理又容易统计还可以把完全不一样的数据结构做出功能上的抽象，比如参考bgfx对于图形API的封装，DX9/DX11/DX12/OpenGL/Vulkan 全都可以用一套API包装起来，texture这样的复杂结构反正也只需要用到一个索引访问----by 果哥
+7. 防止野指针：养成在变量离开作用域之前就释放掉或者在delete后将nullptr赋给指针,就表示已经释放掉了但是可能还要用
+8. 智能指针不初始化的话,会被初始化成空指针,我们也可以自己初始化:
+shared_ptr<int> p2(new int(42));
+shared_ptr<int> p1 = new int(1023);//错误，必须使用直接初始化，此时是explicit，我们不能把内置指针隐式转换成智能指针
+9. 不要混合使用智能指针和普通指针，会出现很多问题，例如：
+    void process(shared_ptr<int> ptr){}
+    int *x(new int(1024))
+    process(x)//错误：x是普通指针
+    process(shared_ptr<int>(x))//合法的，但是内存会被释放
+    int j = *x //未定义的，x是空指针
+10. 不要使用智能指针的get方法返回的内置指针初始化另一个指针，或者给智能指针复制。所以需要在确定程序不会delete get到的指针时才用get
+11. 如果在程序崩溃发生异常的时候，此时new出来的对象没有delete，则内存永远不会释放，，，，
+12. 使用自己的删除器：shared_ptr<connection> p(&c, end_connection);这样在p被销毁的时候，会调用end_connection，从而通过我们自己的定制操作关闭网络连接等。
+13. unique_ptr是不能拷贝和复制的，但是可以通过release和reset将指针的所有权从一个非const的unique_ptr转移给另一个unique。release会切断unique_ptr和原来对象间的关系，reset是让unique_ptr重新指向给定的指针。
+p2.release()//错误，p2不会释放内存而且我们也丢失了指针
+auto p = p2.release()//正确，但是我们要记得delete(p)
+p3.reset(p2.release())//p2内存交给p3
+14. weak_ptr：一种shared_ptr，但是不会增加计数，当shared_ptr释放掉，weak_ptr也释放掉。因为这种特性，在使用weak_ptr的时候要先用lock判断对象是否还存在：if(shared_ptr<np> np = wp.lock()){}
+15. 对动态数组的初始化：int *p = new int[10]()//10个都是0的int
+如果使用 int *p = new int[0]//仍然不会报错，但是p是一个类似于尾后指针的非空指针。
+16. 智能指针可以支持动态数据，但是只有unique_ptr支持直接下标访问，shared_ptr想要访问的话必须提供自己的删除器，并且通过get来修改数组。
+17. new和delete将对象构造/析构和内存申请/释放结合在了一起（某道面试题），因此allocator可以将两个分开来。：
+    allocator<string> alloc;//可以分配string的allocator对象
+    auto const p = alloc.allocate(n);//可以分配n个未初始化的string
+    alloc.construct(p++);//p为空字符串
+    alloc.destroy(--p);//销毁，这里其实应该有一个while的
+    auto q = uninitialized_copy(vi.begin(), vi.end(), p);//拷贝数据
+    alloc.deallocate(p,n)//释放内存
 
+
+**十三、（对象）拷贝控制**
+
+1. 对于拷贝构造函数是explicit的构造函数来说，使用拷贝初始化还是直接初始化是有很大不同的：
+    vector<int> v1(10); //正确，直接初始化
+    vector<int> v2 = 10;//错误，接受大小参数的构造函数是explicit的
+    void f(vector<int>);//f的参数进行拷贝初始化
+    f(10);              //错误。不能用一个explicit的构造函数拷贝一个实参
+    f(vector<int>(10)); //正确：从一个int直接构造一个临时vector
+因为vector的接受单一大小参数的构造函数是explicit的，所以会出现错误，必须显式进行调用
+2. 析构函数：先执行函数体，再按照成员初始化的逆序销毁。如果需要一个析构函数，一般情况下也需要一个自定义拷贝赋值运算符和拷贝构造函数，这三个几乎是同时存在的，其中一个必需时，另外两个一般也必需
+3. 阻止拷贝：虽然声明了他们，但是不能用任何方式使用他们：
+    noCopy() = default;//使用合成的默认构造函数
+    noCopy(const noCopy&) = delete //阻止拷贝
+    noCopy &operator=(const noCopy&) = delete; // 阻止赋值
+    ~noCopy() = default;// 使用合成的析构函数
+    析构函数不能是delete的，因为如果析构是delete的，那对象无法销毁了
+4. 
 
 
 
