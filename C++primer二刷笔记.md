@@ -304,7 +304,6 @@ p3.reset(p2.release())//p2内存交给p3
     auto q = uninitialized_copy(vi.begin(), vi.end(), p);//拷贝数据
     alloc.deallocate(p,n)//释放内存
 
-
 **十三、（对象）拷贝控制**
 
 1. 对于拷贝构造函数是explicit的构造函数来说，使用拷贝初始化还是直接初始化是有很大不同的：
@@ -321,7 +320,50 @@ p3.reset(p2.release())//p2内存交给p3
     noCopy &operator=(const noCopy&) = delete; // 阻止赋值
     ~noCopy() = default;// 使用合成的析构函数
     析构函数不能是delete的，因为如果析构是delete的，那对象无法销毁了
-4. 
+4. 对于成员变量有const的，或者有引用成员的，编译器无法对类进行默认构造函数。
+5. 关于std::swap 和 using namespace std; swap()的区别：
+如果使用前者的话，则每次调用一定会使用std版本的swap，而如果使用后面这种写法，就可以在类内定义swap，然后调用的时候会先检查类内部是否有swap，如果没有的话才调用std版本的swap，这个小技巧还是要知道的，使用std::move可以避免潜在的名字冲突
+6. move标准库函数：调用移动构造函数，相当于一个static_cast，但是同时可以将原来的str移走，需要使用str::string t(str::move(r));如果单纯使用string&&r = std::move(r)的话，并不能移走
+move可以获得绑定到左值上的右值引用
+7. 右值引用：必须绑定到右值的引用， 即只能绑定到一个即将销毁的对象
+    int i = 42;//正确
+    int &r = i;//正确， r引用i
+    int &&rr = i;//错误，不能将一个右值引用绑定到左值上面，这里面i是一个左值
+    int &r2 = i*42;//错误 i*42是一个右值
+    const int &r3 = i * 42;// 正确，我们可以将一个const的引用绑定到一个右值上面
+    int &&rr2 = i*42;// 正确，将rr2绑定到乘法结果上。因为i*42是一个右值
+    本质其实是因为i*42 是一个右值，i是左值
+    int &&rr1 = 42;//正确，字面常量是右值
+    int &&rr2 = rr1//错误，表达式rr1是左值
+8. noexcept关键字：告诉我们的函数将不会抛出任何异常：
+    StrVec::StrVec(StrVec &&s) noexcept:element(s.element){}
+    不抛出异常的移动构造函数和移动赋值运算符必须标记为noexcept
+9. 定义了一个移动构造函数或者移动赋值运算符的类必须也定义自己的拷贝操作，不然有些成员会被默认的定义成delete的。而如果定义了拷贝构造函数没定义移动构造函数的时候，使用了move方法， 会仍然执行拷贝构造
+    Foo z(std::move(x))执行拷贝构造
+10. 对于同时存在拷贝构造函数和移动构造函数的时候，编译器对两者的选择是看是否是右值或者是左值的，右值是移动，左值是拷贝，例如
+    StrVec v1, v2;
+    v1 = v2 //v2是一个左值，使用拷贝赋值
+    StrVec getVec(istream &)//返回一个右值，此时拷贝和移动都是可行的，但是因为调用拷贝赋值需要进行一次到const的转换，而StrVec&是精确匹配的，所以会用移动赋值
+    v2 = getVec(cin)//是一个右值，选择移动赋值
+11. 调用make_move_iterator可以讲一个普通的迭代器转换成一个移动迭代器，这个迭代器可以返回右值：
+    auto first = alloc.allocate(newcapacity);
+    auto last = uninitialized_copy(make_move_iterator(begin()), make_move_iterator(end()), first);
+12. 引用限定符&（reference qualifier）放在函数的参数列表后面，表示this可以指向一个右值还是左值
+    Foo &operator=(const Foo&)& //只能向可修改的左值赋值
+    Foo &operator=(const Foo&)&&//只能向右值赋值
+    如果和const一起使用的话，const必须在前：
+    Foo someMem()const &;
+    同时如果重载的话，必须所有的版本都必须加上引用限定符或者不加
+    Foo sorted() &&
+    Foo sorted() const//错误，因为上面有引用限定符，所以这里必须也有
+
+
+**十四、重载和类型转换**
+
+1. 
+
+
+
 
 
 
