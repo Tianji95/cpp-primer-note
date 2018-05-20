@@ -360,9 +360,102 @@ move可以获得绑定到左值上的右值引用
 
 **十四、重载和类型转换**
 
-1. 
+1. 是否将重载运算符定义为成员函数（或者普通函数）
+    赋值（=）， 下标([]), 调用（()）和成员访问箭头必须是成员函数
+    复合赋值运算符一般来说应该是成员，但并非必须
+    改变对象状态的运算符或者与给定类型密切相关的运算符，如递增，递减，解引用运算符，通常是成员
+    具有对称性的运算符可能转换任意一端的运算对象，如相等性，加减乘除，关系运算符，普通的非成员函数
+2. 一个类如果有下标运算符重载的时候operator[](),一般会有两个版本，一个是const版本，另一个是非const版本，这样当我们给对象赋值的时候使用非常量的，当我们只是作为常量返回的时候就不能赋值
+3. 如何区分递增++，递减--的前置还是后置：后置版本提供一个值为0的实参（虽然实际上这个实参没什么用，只是用来区分前置和后置的）
+    StrBlobStr operator++(int)//后置运算符 a++
+    StrBlobStr& operator++()//前置运算符 ++a
+4. 重载解引用运算符(*)和箭头运算符（->）的时候,解引用运算符可以返回任意我们想要的数据，例如operator*(){return 42;},但是箭头运算符则必须指向类对象的指针或者是一个重载了->的累的对象，除此以外都会发生错误
+5. 函数调用运算符的重载：即可以通过对类的调用来完成一些操作：
+    struct absInt{
+        int operator()(int val)const{
+            return val < 0? -val:val;
+        }
+    }
+    int i = -42;
+    absInt absObj;
+    int ui = absObj(i);
+    其作用类似于lambda表达式
+6. 标准库function类型：实际上是一个模板：
+    function<int(int, int)> f1 = add;//int(int, int)是一个函数类型，接受两个int，返回一个int,add是一个函数指针
+    function<int(int, int)> f2 = divide();//divide是类似上一条的对象类的对象
+    function<int(int, int)> f3 = [](int i, int j){return i*j};//lambda
+    cout<< f1(4, 2)<<endl;
+    map<string, function<int(int, int)>> binops;然后就可以添加任意形式的可调用对象了
+    例如binops["+"] = std::add<int>();
+7. 重载函数无法放到map里面，可以的做法是将函数指针放进去，例如：
+    int (*fp)(int, int) = add;
+    binops.insert({"+", fp});
+8. 一般不会编写隐式的类型转换运算符，而可以编写显式的类型转换运算符，并且应该尽量避免有二义性或者容易引起误解的类型转换。
+    例如同时编写一个 operator int()const 和 operator double() const的时候，调用long double时就会出现二义性
 
+**十五、面向对象程序设计**
 
+1. 养成写override 关键字的习惯，指明该函数是从基类中改写的。
+2. 动态绑定：根据调用的实参类型选择到底是使用父类的成员函数还是子类的成员函数：
+    class Buik_quote:public Quote{    }
+    double print_total(const Ouote &item){}//动态绑定
+    print_total(basic)//调用父类
+    print_total(bulk)//调用子类
+3. 派生类和基类的存储空间是不连续（可能需要考虑到cache存储）
+4. 如果一些类不想让其他类继承，可以使用final关键字：
+    class NoDerived final {}//这个类不能被继承
+5. 从派生类到基类的转换：自动类型转换只对指针和引用类型有效，同时忽略派生类独有的对象。
+   基类向派生类不存在隐式类型转换
+和任何其他成员一样，派生类向基类的类型转换也可能因为由于访问受限而变得不可行。
+6. 多态性：具有继承关系的多个类型成为多态类型。当我们使用基类的引用或者指针调用基类中定义的一个函数时，我们并不知道该函数真正作用的对象是什么类型。
+7. 使用作用域运算符可以实现强迫虚函数执行某个特定版本的功能：double undiscounted = baseP->Quote::net_price()
+8. 纯虚函数：即表示当前这个函数时无意义的，拥有纯虚函数的类被称为“抽象基类”，是无法定义对象的，只能用来继承
+    class Disc_quote : public Quote{
+        double net_price() const = 0;
+    }
+    Disc_quote discounted;//错误
+9. 派生访问说明符：控制派生类用户对于基类成员的访问权限：
+    class Base{
+        public:
+            void pub_mem();
+        protected:
+            int prot_mem;
+        private:
+            char priv_mem;
+    }
+    class Pub_derv:public Base{
+        int f(){return prot_mem}//正确，派生类可以访问protect
+        char g(){return priv_mem;}//错误，private不可访问
+    }
+    class Priv_derv:private Base{
+        int f(){return prot_mem}//正确，派生类可以访问protect
+        char g(){return priv_mem;}//错误，private不可访问
+    }
+    但是在对象对于基类成员的访问时就会出现不同，即所有父类的成员都是private或者public的：
+    Pub_derv pub_d1;
+    Pirv_derv priv_d2;
+    pub_d1.pub_mem();//正确，因为是public
+    priv_d2.pub_mem();//错误，因为是private的
+    类型转换也同样适用
+10. 友元friend关系是不能继承的，不能因为父类是friend，所有的派生类都是friend。
+11. 改变个别成员的可访问性：有时候我们需要改变个别成员的可访问性，可以使用using关键字来解决：
+    class Derived : private Base{
+        public:
+            using Base::size;
+        protect:
+            using Base::n;
+    }
+    通过这样的写法，使用Derived的用户可以直接访问Base的size成员，即使是private继承的。同时Derived的派生类可以访问n这个成员。
+12. 同成员访问说明符一样，struct和class在继承的时候也是按照默认的权限继承的，例如所有的class默认都是private继承，所有的struct默认都是public继承。
+13. 因为名字查找永远优先于类型检查，所以当名字相同的时候会出现下面的问题：
+    struct Base{
+        int memfcn();
+    }
+    struct Derived:Base{
+        int memfct(int);
+    }
+    Derived d;
+    d.memfcn()//错误，因为参数列表为空的memfcn被隐藏掉了。正确的用法是d.Base::memfcn()
 
 
 
