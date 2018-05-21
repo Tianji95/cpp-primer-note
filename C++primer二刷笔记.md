@@ -531,8 +531,24 @@ move可以获得绑定到左值上的右值引用
     int a[10], b[42];
     fobj(a, b);//调用f(int*, int*);
     fref(a, b);//错误，数据类型不匹配
-
-
+14. 显示模板参数：例如template<typename T1, typename T2, typename T3>
+                    T1 sum(T2, T3);
+    使用的时候：auto val = sum<long long>(i, j);//这里的long long指的是T1
+    三个参数必须从左向右匹配：如果是这样写的：
+                    template<typename T1, typename T2, typename T3>
+                    T3 sum2(T2, T1);
+    则必须制定所有三个模板，因为无法只使用一个的时候无法确定到底是T1还是T3，所以一定要按照顺序来
+                    用的时候只能：auto val = sum2<long long, int, long>(i, j);
+                其中 long long指的是T1，int指的是T2， long是T3
+15. 组合使用类型转换模板remove_reference、尾置返回、decltype，我们可以在函数中返回元素值的拷贝：
+    template <typename It>
+    auto fcn2(It beg, It end) -> typename remove_reference<decltype(*beg)>::type{return *beg;}
+16. 函数指针实参推断：
+    template <typename T> int compare(const T&, const T&);
+    int (*pf1)(const int&, const int&) = compare;//pf1指向实例int compare(const int&, const int&);
+    void func(int(*)(const int&, const int&));
+    void func(int(*)(const string&, const string&));
+    func(compare<int>);;//显式的指出实例化哪一个compare
 
 
 
