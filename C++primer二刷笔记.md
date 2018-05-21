@@ -1,4 +1,4 @@
-虽然我们在写C++的大部分时候不会用到C++中的一些骚操作，但是作为一个科班毕业的程序员，如果去看别人的代码，看到这些骚操作的时候还是应该要看懂的。这也是为什么我要在网易实习了一年半以后重新捡起C++primer看一遍。查漏补缺。
+再刷一遍primer，记些笔记，查漏补缺
 
 **二、基本数据类型**
 
@@ -456,6 +456,82 @@ move可以获得绑定到左值上的右值引用
     }
     Derived d;
     d.memfcn()//错误，因为参数列表为空的memfcn被隐藏掉了。正确的用法是d.Base::memfcn()
+14. 虚析构函数：
+    class Quote{
+        virtual ~Quote() = default;
+    }
+    如果一个类定义了虚析构函数，那么即使它通过=dafault的方式使用了默认的版本，编译器也不会为这个类定义默认的移动操作。
+15. 基类和派生类的构造-析构顺序，假设A继承自B，B继承自C：
+    构造顺序：A调用B的构造函数，B调用C的构造函数
+             C执行构造函数，B执行构造函数，最后A执行构造函数
+    析构顺序：A销毁自己的成员，调用B的析构函数，B销毁自己的成员，调用C的析构函数
+16. 派生类可以使用从父类继承来的构造函数：
+    class Bulk_quote : public Disc_quote{
+        public:
+        using Disc_quote:: Disc_quote//继承Disc_quote的构造函数
+    }
+    其实类似于构造函数里面成员变量初始化的 Bulk_quote():Disc_quote(){}
+17. 如果想要在vector既存放父类又存放派生类，如果使用vector<Base>，那么派生类的部分将会被扔掉，如果使用vector<child>那么父类无法存放。正确的做法应该是存放父类的指针：vector<shared_ptr<Base>>
+
+
+**十六、模板与泛型编程**
+
+1. template<typename T, typename U, class M>//必须使用class 或者typename，建议使用typename
+   int compare(const T &v1, const T &v2){} 
+2. 非类型模板参数：
+    template<unsigned N, unsigned M>
+    int compare(const char (&p)[N], const char (&p2)[M])
+    当我们调用compare("hi", "mom")的时候
+    会生成int compare(const char (&p)[3], const char (&p2)[4])，考虑到末尾有一个空字符
+3. 也可以是inline的,但是要在模板参数列表之后，返回类型之前：
+    template<typename T> inline T min(){}
+4. 编写泛型代码的要求：模板中的函数参数是const的引用；函数体中的条件判断仅使用“<”或者"less"比较运算，这样可以少一种类型的支持，让代码运行更快，尽量减少对实参类型的要求
+5. 当编译器遇到一个模板定义的时候，他并不生成代码，只有出现一个实例的时候才生成代码。而为了生成一个实例化版本，编译器需要掌握函数模板或者类模板成员函数的定义，所以
+    模板的头文件通常既包括声明也包括定义
+6. 模板类：
+    template <typename T> class Blob{
+        Blob();
+        Blob(std::initializer_list<T> il);
+    }
+    Blob<int> ia = {0, 1, 2, 3, 4};
+7. 在模板类的内部的作用域内，我们可以直接使用模板名而不必指定模板实参
+8. 在模板类中声明友元：
+    template <typename> class BlobPtr;
+    template <typename> class Blob;
+    template <typename T> bool operator==(const Blob<T>&, const Blob<T>&);
+    template <typename T> class Blob{
+        friend class BlobPtr<T>;
+        friend bool operator==<T>(const Blob<T>&, const Blob<T>&);
+    }
+    这样友元的声明用Blob的模板形参作为他们自己的模板实参，friend的关系就被限定在相同类型实例化的Blob和BlobPtr相等运算符之间
+    如果使用不同的模板参数，例如：friend bool operator==<typename X>();则所有的实例都将成为友元
+    或者将模板类型参数声明为友元，例如friend T;
+9. 模板的类型别名，除了传统的类型别名以外，还可以使用：
+    template<typename T> using partNo = pair<T, unsigned>;
+    partNo<string> books; books是一个pair<string, unsigned>
+10. 当我们希望通知编译器一个名字表示类型时，必须使用关键字typename而不是class：
+    return typename T::value_type();
+11. 普通类和模板类的模板成员：
+    class DebugDelete{
+        template<typename T> void operator()(T *p)const{delete p;}
+    }
+    double *p = new double; DebugDelete d;
+    d(p);//通过类来进行delete
+    template <typename T> class Blob{
+        template<typename It>Blob(It b, It e);
+    }
+12. 显式实例化：
+    extern template class Blob<string> //实例化声明
+    template int compare(const int&, const int&) //实例化定义
+    这样可以避免在多个文件中实例化相同的模板，避免不必要的开销。
+    对于每一个实例化的声明，在程序中某个位置必须有其显式的实例化定义
+13. 顶层（top）const在模板中的实参转换通常会被忽略：
+    template <typename T> T fobj(T, T);
+    template <typename T> T fref(const T&, const T&);
+    int a[10], b[42];
+    fobj(a, b);//调用f(int*, int*);
+    fref(a, b);//错误，数据类型不匹配
+
 
 
 
