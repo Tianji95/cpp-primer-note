@@ -549,6 +549,119 @@ move可以获得绑定到左值上的右值引用
     void func(int(*)(const int&, const int&));
     void func(int(*)(const string&, const string&));
     func(compare<int>);;//显式的指出实例化哪一个compare
+17. 引用折叠：在正常绑定规则之外有两个例外规则：
+    (1). template <typename T>void f3(T&&);
+    当我们将一个左值（如i）传递给函数的右值引用参数，且此右值引用指向模板类型参数（如T&&)时，编译器推断模板类型参数为实参的左值引用类型，因此当我们调用f3(i)的时候，编译器推断T的类型为int&而不是int
+    (2). 如果简介创建一个引用的引用，（不是直接使用&&，而是通过类型（1）的这种转换创建的，类型别名或者模板参数），则这些引用形成了折叠，在所有情况下，引用会折叠成一个普通的左值引用类型。
+    X& &， X& &&和X&& X都折叠成X&，X&& &&折叠成X&&
+    这就会引起非常多的问题，例如调用f3(42);因为是右值，所以实际上里面T为int，而调用f3(i);时，T是int&，就可能改变i的值。所以正确的做法是重载一下：
+    template <typename T>void f(T&&);
+    template <typename T>void f(const T&);
 
+18. 通过引用折叠实现标准库move函数;
+    template <typename T>
+    typename remove_reference<T>::type&& move(T&& t){
+        return static_cast<typename remove_reference<T>::type&&>(t);
+    }
+    请自己分析一下调用 std::move(string("bye"))和std::move(s);在move里面的步骤//具体答案在p611
+    这种方法可以同时适配左值和右值，根据具体情况来具体指示到底是左值版本还是右值版本。
+19. forward关键字：可以保持原始实参的类型，保存实参类型的所有细节：
+    template <typename F, typename T1, typename T2>
+    void flip(F f, T1 &&t1, T2 &&t2){
+        f(std::forward<T2>(t2), std::forward<T1>(t1));
+    }
+    此时如果我们调用flip(g, i, 42);i将以int&类型传递给g，42将以int&&类型传递给g
+20. 当重载和模板同时发生的时候，编译器会选择非模板的版本，因此当两个模板都可以精确匹配某一次调用的时候，为了保证精确调用某一个模板，建议声明一个非模板版本（当然我觉得这里尽量不要出现这种情况，，，这样代码的可读性也太emmmm）
+21. 可变参数模板：
+    template <typename T, typename... Args>
+    void foo(const T &t, const Args&, ...rest);
+    当使用foo(i, s, 42, d);的时候，编译器会生成void foo(const int&, const string&, const int&, const double&);的版本
+    也可以使用sizeof...(Args)（表示类型参数的数目） 和sizeof...(rest)（表示函数参数的数目） 
+22. 可变参数函数在调用的时候通常是递归的，例如上面那个，会首先调用foo(i,s,42,d),然后调用(i,42,d),以此类推
+23. emplace_back实际上是一个可变参数模板，然后内部进行了转发参数的操作：
+    template <class...Args> inline
+    void StrVec::emplace_back(Args&&... args){
+        chk_n_alloc();
+        alloc.construct(first_free++, std::forward<Args>(args)...);
+    }
+    实际上调用emplace_back(10, 'c')的时候会扩展出std::forward<int>(10), std::forward<char>(c)
+24. 函数和类模板的特例化：template<typename T>int compare(const T&, const T&);
+                        template <> int compare(const char* const &p1, const char* const &p2);
+
+**十七、标准库特殊设施**
+
+1. tuple类型：类似于pair的模板，但是一个tuple可以有任意数量的成员。其实tuple的左右有些类似于class和struct
+    tuple<string, vector<double>, int, list<int>> someVal("constants", {3.14, 2.71}, 42, {0, 1, 2, 3});
+    tuple的初始化要么使用直接初始化方法，要么使用make_tuple方法生成
+    获取tuple的成员：auto book = get<0>(someVal);
+    如果不知道tuple准确的类型，可以使用decltype，tuple_element和tuple_size：
+    size_t sz = tuple_size<decltype(someVal)>::value;//返回4
+    tuple_element<1, decltype(someVal)>::type cnt = get<1>(someVal);//cnt是一个vector
+2. bitset类型：是一个能够处理最长整型类型大小的位集合：
+    bitset<32> bitvec(1U);//低位为1，其他为0，编号从0开始的二进制位是低位。31为高位
+    用string初始化bitset的话，正好和string的下标相反：
+    bitset<32> bitvec4("1100");2,3位为1，剩余两位为0；
+3. 正则表达式（regex类）：
+    regex r("[[:alpha:]]*" + "[^c]ei" + "[[:alpha:]]*");
+    smatch results;
+    if(regex_search(test_str, results, r)){cout<<results.str()<<endl;}
+    因为正则表达式是在运行的时候编译的，所以效率非常的慢，应该尽可能少的使用正则表达式
+4. 正则表达式迭代器：
+    for(sregex_iterator it(file.begin(), file.end(), r), end_it; it != end_it; ++it){
+        cout<<it->str<<endl;//输出所有匹配的单词
+        it->prefix().length()//前缀大小
+        it->suffix().str().substr(0, 40);//后缀的一部分
+    }
+5. 和rand不一样的随机数引擎类：
+    default_random_engine e;
+    e.seed(time(0));//可以不设置
+    for (size_t i = 0; i < 10; i++){
+        cout << e() <<endl;
+    }
+6. 随机数分布类：
+    uniform_int_distribution<unsigned> u(0, 9);
+    default_random_engine e;
+    for(size_t i = 0; i < 10; ++i){
+        cout << u(e) <<
+    }
+    这些类应该全部定义成static的，这样才能保证每次调用返回的结果不一样。
+7. IO库：改变输入输入格式的状态
+    cout<< boolalpha << true << " " << false <<endl;
+    会输出 true false 而不是 1 0，这时候要用cout<< noboolalpha才行。类似的还有hex，oct，dec等
+    以及在cout上面的cout.precision(12); 
+8. 底层的未格式化IO操作（注意，这些底层的操作容易出错）：
+    cout.put(ch)//单字节操作，可以保留空白字符的
+    peek返回下一个字符的副本，但是不会从输入流中把这个字符删除掉
+    unget使输入流向后移动，从而最后读取的值又回到流中//不过这些操作的返回都是int类型的，方便判断是否是文件结尾
+    cin.getline等操作是多字节IO操作，可以比较快速的输入
+
+
+**十八、用于大型程序的工具**  
+
+1. 栈展开（stack unwinding）：在抛出一个异常的时候，程序会暂停当前函数的执行并且找对应的catch，如果找不到，就继续检查外层的catch。在展开的过程当中，因为调用链上的语句会提前退出，所以调用链上的局部对象可能会销毁掉。同时如果一些需要手动释放的资源在释放之前发生了异常，那么这些资源将不会释放，我们写代码的时候需要注意
+2. 异常的重新抛出：当一块catch语句语法解决某个异常的时候，可以将这个异常抛出给上一层函数处理：
+    catch(my_error &eObj){
+        eObj.status = errCOdes::servereErr;
+        throw;抛给上一层
+    }
+3. 捕获所有异常：
+    catch(...){    }
+4. 处理构造函数初始值抛出的异常
+    template <typename T>
+    Blob<T>::Blob(std::initializer_list<T> il)
+    try:
+    data(std::make_shared<std::vector<T>> (il)){
+    }
+    catch(const std::bad_alloc &e){
+        handle_out_of_memory(e);
+    }
+5. noexcept关键字：
+    告诉程序这个地方不会抛出异常（即使抛出异常也会终止整个程序）
+    void recoup(int) noexcept;
+    void recoup(int) throw();和上面是等价的。
+    判断一个函数是不是会抛出异常的：
+    noexcept(recoup(i));//返回true
+    void f() noexcept(noexcept(g()));//让f和g的异常说明一致
+    noexcept说明符会影响函数指针的使用，例如加入noexcept的函数指针和没有加入noexcept的函数指针不能相等
 
 
