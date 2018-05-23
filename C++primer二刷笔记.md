@@ -663,7 +663,14 @@ move可以获得绑定到左值上的右值引用
     noexcept(recoup(i));//返回true
     void f() noexcept(noexcept(g()));//让f和g的异常说明一致
     noexcept说明符会影响函数指针的使用，例如加入noexcept的函数指针和没有加入noexcept的函数指针不能相等
-
+6. 定义命名空间：
+    '''
+    namespace cplusplus_primer{
+        class tempClass{
+        };
+    }
+    '''
+    注意不要随便写namespace xxx,会导致名字混乱
 
 
 
