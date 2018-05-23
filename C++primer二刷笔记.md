@@ -22,6 +22,14 @@
 7. const 变量默认只在单个文件中共享，如果想要在多文件共享的时候，需要添加extern关键字
 8. 引用的类型必须和其引用对象的类型一致，例外情况是：右边的表达式可以转换成左边的类型，例如 int i = 42; const int &r1 = i;是正确的，因为编译器在编译的时候回出现const int temp = i; const int &r1 = temp;这样的操作，所以const int &r2 = 42; int &r4 = r1 * 2不对，因为编译器无法转换。
 9. 顶层（高等级const，top-level const）const 和底层const：顶层const表示指针本身是个常量，例如const int ci = 42. 底层const表示指针所指的对象是一个常量，例如const int *p2 = & ci;也会出现一个指针又是顶层又是底层const的情况，例如const int *const p3 = p2;其实就是指针const和普通const的区别，指针const（顶层const）是地址不能变，普通const是值不能变。
+
+        int i = 0;
+        int *const p1 = &i; // we can't change the value of p1; const is top-level
+        const int ci = 42; // we cannot change ci; const is top-level
+        const int *p2 = &ci; // we can change p2; const is low-level
+        const int *const p3 = p2; // right most const is top-level, left-most is not
+        const int &r = ci; // const in reference type is always low-level 
+
 10. constexpr 关键字：由编译器来验证一个表达式是否是const表达式，如果指定是指针的话，默认是顶层指针，例如constexpr int *q = nullptr;q是一个常量指针。
 11. typedef 的一个坑：如果我们定义typedef char *pstring; 这个时候const pstring指的就是一个指向char的常量指针（指向的地址不变）。而如果把他替换成原来的形式 const char *就变成了指向常量字符的指针，意思就变了。
 12. auto 会自动忽略顶层const ，例如
