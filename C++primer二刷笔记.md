@@ -619,14 +619,14 @@ move可以获得绑定到左值上的右值引用
         cout << e() <<endl;
     }
 6. 随机数分布类：
-    uniform_int_distribution<unsigned> u(0, 9);
-    default_random_engine e;
-    for(size_t i = 0; i < 10; ++i){
-        cout << u(e) <<
-    }
+        uniform_int_distribution<unsigned> u(0, 9);
+        default_random_engine e;
+        for(size_t i = 0; i < 10; ++i){
+            cout << u(e) <<
+        }
     这些类应该全部定义成static的，这样才能保证每次调用返回的结果不一样。
 7. IO库：改变输入输入格式的状态
-    cout<< boolalpha << true << " " << false <<endl;
+        cout<< boolalpha << true << " " << false <<endl;
     会输出 true false 而不是 1 0，这时候要用cout<< noboolalpha才行。类似的还有hex，oct，dec等
     以及在cout上面的cout.precision(12); 
 8. 底层的未格式化IO操作（注意，这些底层的操作容易出错）：
@@ -640,37 +640,123 @@ move可以获得绑定到左值上的右值引用
 
 1. 栈展开（stack unwinding）：在抛出一个异常的时候，程序会暂停当前函数的执行并且找对应的catch，如果找不到，就继续检查外层的catch。在展开的过程当中，因为调用链上的语句会提前退出，所以调用链上的局部对象可能会销毁掉。同时如果一些需要手动释放的资源在释放之前发生了异常，那么这些资源将不会释放，我们写代码的时候需要注意
 2. 异常的重新抛出：当一块catch语句语法解决某个异常的时候，可以将这个异常抛出给上一层函数处理：
-    catch(my_error &eObj){
-        eObj.status = errCOdes::servereErr;
-        throw;抛给上一层
-    }
+        catch(my_error &eObj){
+            eObj.status = errCOdes::servereErr;
+            throw;抛给上一层
+        }
 3. 捕获所有异常：
-    catch(...){    }
+        catch(...){    }
 4. 处理构造函数初始值抛出的异常
-    template <typename T>
-    Blob<T>::Blob(std::initializer_list<T> il)
-    try:
-    data(std::make_shared<std::vector<T>> (il)){
-    }
-    catch(const std::bad_alloc &e){
-        handle_out_of_memory(e);
-    }
+        template <typename T>
+        Blob<T>::Blob(std::initializer_list<T> il)
+        try:
+        data(std::make_shared<std::vector<T>> (il)){
+        }
+        catch(const std::bad_alloc &e){
+            handle_out_of_memory(e);
+        }
 5. noexcept关键字：
     告诉程序这个地方不会抛出异常（即使抛出异常也会终止整个程序）
-    void recoup(int) noexcept;
-    void recoup(int) throw();和上面是等价的。
+        void recoup(int) noexcept;
+        void recoup(int) throw();和上面是等价的。
     判断一个函数是不是会抛出异常的：
-    noexcept(recoup(i));//返回true
-    void f() noexcept(noexcept(g()));//让f和g的异常说明一致
+        noexcept(recoup(i));//返回true
+        void f() noexcept(noexcept(g()));//让f和g的异常说明一致
     noexcept说明符会影响函数指针的使用，例如加入noexcept的函数指针和没有加入noexcept的函数指针不能相等
 6. 定义命名空间：
-    '''
-    namespace cplusplus_primer{
-        class tempClass{
-        };
-    }
-    '''
+        namespace cplusplus_primer{
+            class tempClass{
+            };
+        }//是可以没有分号的
     注意不要随便写namespace xxx,会导致名字混乱
+7. 模板特例化：模板特例化必须定义在原始模板所属的命名空间中
+        namespace std{
+            template<> struct hash<Sales_data>;
+        }
+    模板特例化以后，然后就可以在命名空间外部定义它了
+        template<> struct std::hast<Sales_data>{}
+8. 嵌套的命名空间：
+        namespace cplusplus{
+            namespace QueryLib{
+
+            }
+            QueryLib::XXX//前面需加内部命名空间名
+        }
+        cplusplus::QueryLib::XXX
+9. 内联命名空间：
+        namespace cplusplus{
+            inline namespace FifthEd{//必须出现在命名空间第一次定义的地方
+                XXX;
+            }
+        }
+        cplusplus::XXX;//可以不写内部内联的命名空间名
+10. 未命名的命名空间：
+未命名的空间只在一个文件中起作用，不同文件中的为命名空间互相不冲突。所以一个文件中只能有一个未命名空间，且他本身类似于静态的作用
+        int i;
+        namespace{
+            int i;
+        }
+        i = 10;//错误，因为i的定义即出现在全局作用域中，又出现在未嵌套的未命名的命名空间中
+        namespace local{
+            namespace{
+                int i;
+            }
+        }
+        local::i = 42//正确，定义在嵌套的未命名的命名空间中的i与全局作用域的i不同
+11. 代替using namespace，使用类型空间的别名：
+        namespace primer = cplusplus_primer;
+        primer::XXX;
+12. 友元声明和实参相关的查找：
+        namespace A{
+            class C{
+                friend void f2();//没有形参，很可能找不到
+                friend void f(const C&);//根据实参相关的查找规则可以被找到
+            }
+        }
+        A::C obj;
+        f(obj);//通过在A::C中的友元声明和obj实参找到f
+        f2();//找不到，没有形参
+13. 多继承,多继承的类包含所有基类的成员，但是基类的构造函数形参不能相同：
+        class Bear:public ZooAnimal{
+            Bear(const string&);
+        }
+        class Endangered{
+            Endangered(const string&);
+        }
+        class Panda:public Bear, public Endangered{
+            因为两个基类构造函数形参相同，所以必须重新定义构造函数
+        }
+14. 多继承的二义性，当两个基类有相同的成员名字，将会引发二义性，建议定义一个全新的版本
+15. 虚继承：对某个类作出声明，承诺愿意共享他的基类，其中共享的基类称为虚基类
+        class Raccoon : public virtual ZooAnimal{}
+        class Bear    : virtual public ZooAnimal{}
+        class Panda   : Public Bear, public Raccoon, public Endangered{}
+在普通情况下，如果不是虚继承的话，Panda将会有两份ZooAnimal，现在虚继承下，就只会有一份ZooAnimal了
+这个时候当我们创建一个Panda对象的时候，首先构造虚基类ZooAnimal，接下来构造Bear，然后构造Raccoon，然后构造第三个直接击雷Endangered，最后构造Panda。因为虚基类总是先于非虚基类构造，和他们继承的顺序无关。多个虚基类同时存在的时候，则按照顺序来
+
+**十九、特殊工具和技术**  
+
+1. new和delete的实现步骤：
+        string *sp = new string("a value");
+        1. new表达式调用一个名为operator new（或者operator new[]）的标准库函数
+        2. 标准库函数分配一块足够大的、原始的、未命名的内存空间以便存储特定类型的对象（或者对象的数组）
+        3. 编译器运行相应的构造函数以构造这些对象，并为其传入初始值
+        4. 对象被分配了空间并且构造完成，返回一个指向该对象的指针。
+        delete sp;
+        1. 对sp所致的对象或者数组执行对应的析构函数
+        2. 编译器调用名为operator delete（或者delete[]） 的标准库释放内存空间 
+2. 自定义自己的new和delete：必须使用noexcept保证他不会出错，返回类型必须是void*，第一个形参必须是size_t类型且不能包括默认实参
+        void *operator new(size_tw size){
+            if(void*mem==malloc(size)){
+                return mem;
+            }
+            else{   }
+        }
+3. 显示调用析构函数：
+        string *sp = new string("a value");
+        sp->~string();
+        跟destroy(类似)
+
 
 
 
