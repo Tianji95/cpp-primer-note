@@ -21,7 +21,7 @@
 6. 引用&必须在定义的时候给与初始值，指针不需要。因为引用是要和初始值一直绑定在一起的，无法指向其他的值。指针前面如果加上*const变成常量指针的话，也无法再改变了。
 7. const 变量默认只在单个文件中共享，如果想要在多文件共享的时候，需要添加extern关键字
 8. 引用的类型必须和其引用对象的类型一致，例外情况是：右边的表达式可以转换成左边的类型，例如 int i = 42; const int &r1 = i;是正确的，因为编译器在编译的时候回出现const int temp = i; const int &r1 = temp;这样的操作，所以const int &r2 = 42; int &r4 = r1 * 2不对，因为编译器无法转换。
-9. 顶层（高等级const，top-level const）const 和底层const：顶层const表示指针本身是个常量，例如const int ci = 42. 底层const表示指针所指的对象是一个常量，例如const int *p2 = & ci;也会出现一个指针又是顶层又是底层const的情况，例如const int *const p3 = p2;其实就是指针const和普通const的区别，指针const（底层const）是地址不能变，top const是值不能变。
+9. 顶层（高等级const，top-level const）const 和底层const：顶层const表示指针本身是个常量，例如const int ci = 42. 底层const表示指针所指的对象是一个常量，例如const int *p2 = & ci;也会出现一个指针又是顶层又是底层const的情况，例如const int *const p3 = p2;其实就是指针const和普通const的区别，指针const（底层const）是地址不能变，普通const是值不能变。
 
         int i = 0;
         int *const p1 = &i; // we can't change the value of p1; const is top-level
@@ -99,8 +99,11 @@ static_cast : 可以进行任何具有明确定义的类型转换（除了const�
         while(cin >> s && s!='a');
 
 最好写上注释注明这里是有意省略
+
 2. 一般不要省略case后面的break，如果没有写break也最好加上注释说明程序的逻辑，同样最后一个标签的break虽然可以省略，但是还是建议不要省略，起码如果还要新增一个case 的话，就不用额外写break了。
+
 3. 最好不要省略switch中的default，这样是为了告诉阅读代码的人，已经考虑到了default的情况。
+
 4. switch 比较有意思的例子：
 
         case true:
@@ -113,7 +116,9 @@ static_cast : 可以进行任何具有明确定义的类型转换（除了const�
             if(file_name.empty())....
 
 这个时候如果直接跳到false分支，则file_name会因为没有初始化出错，而file _name也在作用域内部.所以最好的方法还是自己用{}定义一个块
+
 5. do while 语句可以先执行循环体，在有些情况可能会比较好用（这个平时用的有点少。。）
+
 6. 异常处理代码：
 
         try{
@@ -219,9 +224,13 @@ static_cast : 可以进行任何具有明确定义的类型转换（除了const�
         string isbn() const{return this->bookNo}
 
 这里的const表示this是常量指针，不能改变返回值，也不能改变this里面的值
+
 2. friend 友元关键字，最好放在类的头部集中声明，便于阅读，加上friend关键字以后被加上friend的类或者函数便可以访问声明类的私有成员了
+
 3. mutable 关键字：可变数据成员，在类成员前面加上以后，即使类本身是const，那这个成员也可以被修改
+
 4. 前向声明：只声明，不定义，声明的时候只知道有这个类，但是不清楚类里面有哪些成员，通常用于较大工程中文件之间的声明
+
 5. 函数在查找参数的时候，先查找函数作用域的参数，再查找类成员的参数，例如
 
         int height;
@@ -402,10 +411,14 @@ static_cast : 可以进行任何具有明确定义的类型转换（除了const�
         auto p1 = new auto(obj)//这简直太秀了。。。不管不顾的。。
 
 另外auto p2 = new auto{a, b, c}//错误的，因为auto内只能有单个初始化器。这种做法得到的会是一个指针，例如如果obj是一个int，那么p1就是一个int*
+
 5. 定位new(placemant new) int *p2 = new(nothrow) int//给new传递一个参数，如果内存耗尽，则不抛出异常，返回一个空指针
+
 6. 关于该不该使用智能指针的问题：C++primer中提到：“坚持只使用智能指针，就可以避免所有的内存泄漏问题，所以应该提倡使用智能指针”，但是在网易的分享/培训当中却说道：不要使用共享指针。其主要原因是：共享指针的乱用导致：被shared_ptr的资源实际上并没有共享，这样就会使代码出现资源泄漏和一些bug，而且因为有可能会出现其他程序员通过赋值给另一个共享指针而修改了这一段资源，这样的bug就会很难查出来。另一个原因时shared_ptr并不一定是线程安全的，所以要小心。同时有时候会忘记使用make_share来创建shared_ptr，会导致性能下降以及安全问题。同时经常会出现使用delete把智能指针删除的情况。
 另外对于游戏来说不用智能指针更好，因为引用计数本身会带来额外的开销，而且内存分配东一块西一块很不好管理，cache也不友好，最好是对象都放到列表里面，都用数组下标访问，这种方式既容易管理又容易统计还可以把完全不一样的数据结构做出功能上的抽象，比如参考bgfx对于图形API的封装，DX9/DX11/DX12/OpenGL/Vulkan 全都可以用一套API包装起来，texture这样的复杂结构反正也只需要用到一个索引访问----by 果哥
+
 7. 防止野指针：养成在变量离开作用域之前就释放掉或者在delete后将nullptr赋给指针,就表示已经释放掉了但是可能还要用
+
 8. 智能指针不初始化的话,会被初始化成空指针,我们也可以自己初始化:
 
         shared_ptr<int> p2(new int(42));
