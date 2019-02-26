@@ -22,8 +22,8 @@
 
 6. 引用&必须在定义的时候给与初始值，指针不需要。因为引用是要和初始值一直绑定在一起的，无法指向其他的值。指针前面如果加上*const变成常量指针的话，也无法再改变了。
 7. const 变量默认只在单个文件中共享，如果想要在多文件共享的时候，需要添加extern关键字
-8. 引用的类型必须和其引用对象的类型一致，例外情况是：右边的表达式可以转换成左边的类型，例如 int i = 42; const int &r1 = i;是正确的，因为编译器在编译的时候回出现const int temp = i; const int &r1 = temp;这样的操作，所以const int &r2 = 42; int &r4 = r1 * 2不对，因为编译器无法转换。
-9. 顶层（高等级const，top-level const）const 和底层const：顶层const表示指针本身是个常量，例如const int ci = 42. 底层const表示指针所指的对象是一个常量，例如const int *p2 = & ci;也会出现一个指针又是顶层又是底层const的情况，例如const int *const p3 = p2;其实就是指针const和普通const的区别，指针const（底层const）是地址不能变，普通const是值不能变。
+8. 引用的类型必须和其引用对象的类型一致，例外情况是：右边的表达式可以转换成左边的类型，例如 int i = 42; const int &r1 = i;是正确的，因为编译器在编译的时候回出现const int temp = i; const int &r1 = temp;这样的操作，所以const int &r2 = 42; int &r4 = r1 \* 2不对，因为编译器无法转换。
+9. 顶层（高等级const，top-level const）const 和底层const：顶层const表示指针本身是个常量，例如const int ci = 42. 底层const表示指针所指的对象是一个常量，例如const int \*p2 = & ci;也会出现一个指针又是顶层又是底层const的情况，例如const int \*const p3 = p2;其实就是指针const和普通const的区别，指针const（底层const）是地址不能变，普通const是值不能变。
 
         int i = 0;
         int *const p1 = &i; // we can't change the value of p1; const is top-level
@@ -32,15 +32,15 @@
         const int *const p3 = p2; // right most const is top-level, left-most is not
         const int &r = ci; // const in reference type is always low-level 
 
-const 和*应该是从右向左读
+const 和\*应该是从右向左读
 
         int     const          *        const
         int   constant   pointer to   constant
         <———————————————————————————————
         constant pointer to constant int
 
-10. constexpr 关键字：由编译器来验证一个表达式是否是const表达式，如果指定是指针的话，默认是顶层指针，例如constexpr int *q = nullptr;q是一个常量指针。
-11. typedef 的一个坑：如果我们定义typedef char *pstring; 这个时候const pstring指的就是一个指向char的常量指针（指向的地址不变）。而如果把他替换成原来的形式 const char *就变成了指向常量字符的指针，意思就变了。
+10. constexpr 关键字：由编译器来验证一个表达式是否是const表达式，如果指定是指针的话，默认是顶层指针，例如constexpr int \*q = nullptr;q是一个常量指针。
+11. typedef 的一个坑：如果我们定义typedef char \*pstring; 这个时候const pstring指的就是一个指向char的常量指针（指向的地址不变）。而如果把他替换成原来的形式 const char \*就变成了指向常量字符的指针，意思就变了。
 12. auto 会自动忽略顶层const ，例如
 
         const int ci = i; auto f = ci;
@@ -74,10 +74,10 @@ f 就会只是一个int，这个时候应该用 const auto f = ci;
         vector vec1 = vec2;
 
 8. 但凡是使用了迭代器的循环体，都不要向迭代器所属的容器中添加元素（之前踩过这个坑）
-9. char数组一定要考虑给空字符的位置，例如const char a4[6] = "daniel"; 是错误的，因为没有空间可以存放空字符
-10. int * ptrs[10] //10个指针  int (*Parray)[10] = &arr ;// 一个指针，指向一个数组     int (&arrRef)[10] = arr; // 一个引用，引用一个数组   int *(&arry)[10] = ptrs; //arry是一个数组的引用，数组包含10个指针
-11. int ia[] = {0,1,2,3,4}; auto ia2(ia); // 事实上是 auto ia2(&ia[0])所以ia2是一个整形指针
-12. 数组不常用的begin和end   → → int *beg = begin(ia) //指向ia首元素的指针
+9. char数组一定要考虑给空字符的位置，例如const char a4\[6] = "daniel"; 是错误的，因为没有空间可以存放空字符
+10. int \* ptrs\[10\] //10个指针  int (\*Parray)\[10\] = &arr ;// 一个指针，指向一个数组     int (&arrRef)\[10\] = arr; // 一个引用，引用一个数组   int \*(&arry)\[10] = ptrs; //arry是一个数组的引用，数组包含10个指针
+11. int ia\[] = {0,1,2,3,4}; auto ia2(ia); // 事实上是 auto ia2(&ia\[0\])所以ia2是一个整形指针
+12. 数组不常用的begin和end   → → int \*beg = begin(ia) //指向ia首元素的指针
 13. 使用数组初始化vector ： vector<int> ivec(begin(int_arr), end(int_arr));
 
 **四、表达式**
@@ -154,10 +154,10 @@ static_cast : 可以进行任何具有明确定义的类型转换（除了const�
         myfunc(j);
 
 4. 
-        func(int (&arr)[10])//arr是具有十个整数的整形数组的引用
-        func(int &arr[10])//arr是引用的数组
+        func(int (&arr)\[10])//arr是具有十个整数的整形数组的引用
+        func(int &arr\[10])//arr是引用的数组
 
-5. main里面的(int argc, char *argv[])，程序本身的名字是argv[0],最后一个参数一定是argv[argc] = 0;
+5. main里面的(int argc, char \*argv\[])，程序本身的名字是argv\[0],最后一个参数一定是argv\[argc] = 0;
 6. 可变参数的函数：所有实参类型相同：传递initializer_list这样一个标准库
 
                       void error_msg(initializer_list<string> msg);
@@ -174,7 +174,7 @@ static_cast : 可以进行任何具有明确定义的类型转换（除了const�
 
 8. 函数也可以返回大括号包围值的列表，例如 vector<string> process(){return {"123", "4565"}}
 9. 返回数组指针：C++无法直接返回数组指针，但是可以通过：
-        typedef int arrT[10] 或者 using arrT = int[10]  →   arrT* func(int i);来实现
+        typedef int arrT\[10] 或者 using arrT = int\[10]  →   arrT\* func(int i);来实现
 10. 函数的尾置返回类型->符号例如函数
 
         int (*func(int i))[10] 
@@ -203,7 +203,7 @@ static_cast : 可以进行任何具有明确定义的类型转换（除了const�
         myasset();
 
 15. 多个重载函数的实参类型转换顺序：1.实参形参类型相同、数组类型和指针类型之间的转换、添加或者删除顶层const。2.const转换实现的匹配。3.通过类型提升实现的匹配。4.算数类型转换或者指针转换实现的匹配。5.类类型转换实现的匹配
-16. 函数指针：bool (*pf)(const string &, const string &); 含义：pf前面有一个*，所以pf是指针，右侧是形参列表，说明pf指向的是函数，函数返回是bool，说明pf指向一个返回值是bool的函数指针。
+16. 函数指针：bool (\*pf)(const string &, const string &); 含义：pf前面有一个\*，所以pf是指针，右侧是形参列表，说明pf指向的是函数，函数返回是bool，说明pf指向一个返回值是bool的函数指针。
 如果去掉括号，则
 
         bool *pf(const string &, const string &);
@@ -216,7 +216,7 @@ static_cast : 可以进行任何具有明确定义的类型转换（除了const�
         void (*pf2)(int) = ff;//错误，形参不匹配
         double (*pf3)(int*) = ff//错误，返回值不匹配
 
-18. 以及尾置返回类型的函数：auto f1(int) -> int (*)(int *, int);
+18. 以及尾置返回类型的函数：auto f1(int) -> int (\*)(int \*, int);
 19. 函数后面添加const关键字，表示该成员函数不会改变成员中的变量，见下面第一条
 
 **七、抽象数据类型（类）**
@@ -300,7 +300,7 @@ static_cast : 可以进行任何具有明确定义的类型转换（除了const�
         names.assign(oldstyle.begin(), oldstyle.end());//正确
         names.assign(10, "Hiya");//替换成10个"Hiya"
 
-6. swap交换的是内部地址，所以假定之前一个指向svec1[3]的迭代器，交换以后将会指向svec2[3]。这种做法会让swap很快，但是array和其他顺序容器不一样，array是真的交换数值的。所以array的swap效率和array里面的元素个数有关。
+6. swap交换的是内部地址，所以假定之前一个指向svec1\[3\]的迭代器，交换以后将会指向svec2\[3\]。这种做法会让swap很快，但是array和其他顺序容器不一样，array是真的交换数值的。所以array的swap效率和array里面的元素个数有关。
 7. 范围insert：
 
         vector<string> v = {"quasi", "simba", "frollo", "scar"}
@@ -359,7 +359,7 @@ static_cast : 可以进行任何具有明确定义的类型转换（除了const�
         f = [sz](const string &a){return sz > a.size()};
         其中这个捕获的值是在创建的时候捕获，而不是调用的时候捕获，所以应该尽量减少捕获的值，防止在创建到调用这段时间内变量发生变化。
 
-8. 隐式捕获：f = [=, &os](){}//os是引用捕获方式，其他为值捕获方式
+8. 隐式捕获：f = \[=, &os](){}//os是引用捕获方式，其他为值捕获方式
 9. lambda表达式的返回类型，需要尾置：
 
         []() -> int {}
@@ -412,9 +412,9 @@ static_cast : 可以进行任何具有明确定义的类型转换（除了const�
 
         auto p1 = new auto(obj)//这简直太秀了。。。不管不顾的。。
 
-另外auto p2 = new auto{a, b, c}//错误的，因为auto内只能有单个初始化器。这种做法得到的会是一个指针，例如如果obj是一个int，那么p1就是一个int*
+另外auto p2 = new auto{a, b, c}//错误的，因为auto内只能有单个初始化器。这种做法得到的会是一个指针，例如如果obj是一个int，那么p1就是一个int\*
 
-5. 定位new(placemant new) int *p2 = new(nothrow) int//给new传递一个参数，如果内存耗尽，则不抛出异常，返回一个空指针
+5. 定位new(placemant new) int \*p2 = new(nothrow) int//给new传递一个参数，如果内存耗尽，则不抛出异常，返回一个空指针
 
 6. 关于该不该使用智能指针的问题：C++primer中提到：“坚持只使用智能指针，就可以避免所有的内存泄漏问题，所以应该提倡使用智能指针”，但是在网易的分享/培训当中却说道：不要使用共享指针。其主要原因是：共享指针的乱用导致：被shared_ptr的资源实际上并没有共享，这样就会使代码出现资源泄漏和一些bug，而且因为有可能会出现其他程序员通过赋值给另一个共享指针而修改了这一段资源，这样的bug就会很难查出来。另一个原因时shared_ptr并不一定是线程安全的，所以要小心。同时有时候会忘记使用make_share来创建shared_ptr，会导致性能下降以及安全问题。同时经常会出现使用delete把智能指针删除的情况。
 另外对于游戏来说不用智能指针更好，因为引用计数本身会带来额外的开销，而且内存分配东一块西一块很不好管理，cache也不友好，最好是对象都放到列表里面，都用数组下标访问，这种方式既容易管理又容易统计还可以把完全不一样的数据结构做出功能上的抽象，比如参考bgfx对于图形API的封装，DX9/DX11/DX12/OpenGL/Vulkan 全都可以用一套API包装起来，texture这样的复杂结构反正也只需要用到一个索引访问----by 果哥
@@ -446,8 +446,8 @@ static_cast : 可以进行任何具有明确定义的类型转换（除了const�
 14. weak_ptr：一种shared_ptr，但是不会增加计数，当shared_ptr释放掉，weak_ptr也释放掉。因为这种特性，在使用weak_ptr的时候要先用lock判断对象是否还存在：
         if(shared_ptr<np> np = wp.lock()){}
 
-15. 对动态数组的初始化：int *p = new int[10]()//10个都是0的int
-如果使用 int *p = new int[0]//仍然不会报错，但是p是一个类似于尾后指针的非空指针。
+15. 对动态数组的初始化：int \*p = new int\[10]()//10个都是0的int
+如果使用 int \*p = new int\[0]//仍然不会报错，但是p是一个类似于尾后指针的非空指针。
 16. 智能指针可以支持动态数据，但是只有unique_ptr支持直接下标访问，shared_ptr想要访问的话必须提供自己的删除器，并且通过get来修改数组。
 17. new和delete将对象构造/析构和内存申请/释放结合在了一起（某道面试题），因此allocator可以将两个分开来。：
 
@@ -529,7 +529,7 @@ move可以获得绑定到左值上的右值引用
 
 1. 是否将重载运算符定义为成员函数（或者普通函数）
 
-赋值（=）， 下标([]), 调用（()）和成员访问箭头必须是成员函数
+赋值（=）， 下标(\[]), 调用（()）和成员访问箭头必须是成员函数
 
 复合赋值运算符一般来说应该是成员，但并非必须
 
@@ -537,13 +537,13 @@ move可以获得绑定到左值上的右值引用
 
 具有对称性的运算符可能转换任意一端的运算对象，如相等性，加减乘除，关系运算符，普通的非成员函数
 
-2. 一个类如果有下标运算符重载的时候operator[](),一般会有两个版本，一个是const版本，另一个是非const版本，这样当我们给对象赋值的时候使用非常量的，当我们只是作为常量返回的时候就不能赋值
+2. 一个类如果有下标运算符重载的时候operator\[](),一般会有两个版本，一个是const版本，另一个是非const版本，这样当我们给对象赋值的时候使用非常量的，当我们只是作为常量返回的时候就不能赋值
 3. 如何区分递增++，递减--的前置还是后置：后置版本提供一个值为0的实参（虽然实际上这个实参没什么用，只是用来区分前置和后置的）
 
         StrBlobStr operator++(int)//后置运算符 a++
         StrBlobStr& operator++()//前置运算符 ++a
 
-4. 重载解引用运算符(*)和箭头运算符（->）的时候,解引用运算符可以返回任意我们想要的数据，例如operator*(){return 42;},但是箭头运算符则必须指向类对象的指针或者是一个重载了->的累的对象，除此以外都会发生错误
+4. 重载解引用运算符(\*)和箭头运算符（->）的时候,解引用运算符可以返回任意我们想要的数据，例如operator\*(){return 42;},但是箭头运算符则必须指向类对象的指针或者是一个重载了->的累的对象，除此以外都会发生错误
 5. 函数调用运算符的重载：即可以通过对类的调用来完成一些操作：
 
         struct absInt{
@@ -649,7 +649,7 @@ move可以获得绑定到左值上的右值引用
             int memfcn();
         }
         struct Derived:Base{
-            int memfct(int);
+            int memfcn(int);
         }
         Derived d;
         d.memfcn()//错误，因为参数列表为空的memfcn被隐藏掉了。正确的用法是d.Base::memfcn()
@@ -1036,7 +1036,7 @@ move可以获得绑定到左值上的右值引用
         1. 对sp所致的对象或者数组执行对应的析构函数
         2. 编译器调用名为operator delete（或者delete[]） 的标准库释放内存空间 
 
-2. 自定义自己的new和delete：必须使用noexcept保证他不会出错，返回类型必须是void*，第一个形参必须是size_t类型且不能包括默认实参
+2. 自定义自己的new和delete：必须使用noexcept保证他不会出错，返回类型必须是void\*，第一个形参必须是size_t类型且不能包括默认实参
 
         void *operator new(size_tw size){
             if(void*mem==malloc(size)){
