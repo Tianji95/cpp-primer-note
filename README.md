@@ -834,7 +834,7 @@ move可以获得绑定到左值上的右值引用
 
 **十七、标准库特殊设施**
 
-1. tuple类型：类似于pair的模板，但是一个tuple可以有任意数量的成员。其实tuple的左右有些类似于class和struct
+1. tuple类型：类似于pair的模板，但是一个tuple可以有任意数量的成员。其实tuple的作用有些类似于class和struct
 
         tuple<string, vector<double>, int, list<int>> someVal("constants", {3.14, 2.71}, 42, {0, 1, 2, 3});
         tuple的初始化要么使用直接初始化方法，要么使用make_tuple方法生成
