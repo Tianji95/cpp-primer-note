@@ -1021,7 +1021,7 @@ move可以获得绑定到左值上的右值引用
         class Panda   : Public Bear, public Raccoon, public Endangered{}
 
 在普通情况下，如果不是虚继承的话，Panda将会有两份ZooAnimal，现在虚继承下，就只会有一份ZooAnimal了
-这个时候当我们创建一个Panda对象的时候，首先构造虚基类ZooAnimal，接下来构造Bear，然后构造Raccoon，然后构造第三个直接击雷Endangered，最后构造Panda。因为虚基类总是先于非虚基类构造，和他们继承的顺序无关。多个虚基类同时存在的时候，则按照顺序来
+这个时候当我们创建一个Panda对象的时候，首先构造虚基类ZooAnimal，接下来构造Bear，然后构造Raccoon，然后构造第三个直接基类Endangered，最后构造Panda。因为虚基类总是先于非虚基类构造，和他们继承的顺序无关。多个虚基类同时存在的时候，则按照顺序来
 
 **十九、特殊工具和技术**  
 
